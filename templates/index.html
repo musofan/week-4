@@ -9,6 +9,9 @@
 		body {
 		    padding: 0;
 		    margin: 0;
+		    font-family: Helvetica, Arial, sans-serif;
+    		font-size: 12px;
+    		line-height: 18px;
 		}
 		html, body, #map {
 		    height: 100%;
@@ -19,6 +22,26 @@
 			stroke: red;
 			stroke-width: 5px;
 		}
+		circle:hover {
+		    stroke: black;
+    		stroke-width: 2px;
+    		cursor: crosshair;
+		}
+		div.tooltip{
+            padding: 6px;
+            background: white;
+        }
+        p.tooltip-text{
+    		margin: 0px;
+    		padding: 0px;
+		}
+		div.tooltip{
+  			padding: 6px;
+    		background: white;
+    		visibility: hidden;
+    		position: absolute;
+    		z-index: 10;
+		}		
 	</style>
 
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -27,26 +50,21 @@
 <body>
 
 	<div id="map"></div>
-
+    <div class="tooltip">
+        <p class="tooltip-text" id="title">This is the title</p>
+        <p class="tooltip-text" id="price">This is the price</p>
+    </div>
 	<script type="text/javascript">
 
-		var map = L.map('map').setView([22.539029, 114.062076], 16);
+		var tooltip = d3.select("div.tooltip");
+		var tooltip_title = d3.select("#title");
+		var tooltip_price = d3.select("#price");
 
-		//this is the OpenStreetMap tile implementation
+		var map = L.map('map').setView([22.539029, 114.062076], 16);
 
 		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
     		attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
 		}).addTo(map);
-
-		//uncomment for Mapbox implementation, and supply your own access token
-
-		// L.tileLayer('https://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}', {
-		// 	attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
-		// 	mapid: 'mapbox.light',
-		// 	accessToken: [INSERT YOUR TOKEN HERE!]
-		// }).addTo(map);
-
-		//create variables to store a reference to svg and g elements
 
 		var svg = d3.select(map.getPanes().overlayPane).append("svg");
 		var g = svg.append("g").attr("class", "leaflet-zoom-hide");
@@ -71,6 +89,17 @@
 			circles.enter()
 				.append("circle")
 			    .attr("r", 10);
+			    .on("mouseover", function(d){
+        			tooltip.style("visibility", "visible");
+        			tooltip_title.text(d.properties.name);
+        			tooltip_price.text("Price: " + d.properties.price);
+    				})
+    			.on("mousemove", function(){
+        			return tooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");
+    			})
+    			.on("mouseout", function(){
+        			return tooltip.style("visibility", "hidden");
+    			});
 
 			// function to update the data
 			function update() {
@@ -91,10 +120,8 @@
 			    g   .attr("transform", "translate(" + (-topLeft[0] + buffer) + "," + (-topLeft[1] + buffer) + ")");
 
 			    // update circle position and size
-			    circles
-			    	.attr("cx", function(d) { return projectPoint(d.geometry.coordinates[0], d.geometry.coordinates[1]).x; })
-			    	.attr("cy", function(d) { return projectPoint(d.geometry.coordinates[0], d.geometry.coordinates[1]).y; });
-			};
+			    circles.attr("cx", function(d) { return projectPoint(d.geometry.coordinates[0], d.geometry.coordinates[1]).x; }).attr("cy", function(d) { return projectPoint(d.geometry.coordinates[0], d.geometry.coordinates[1]).y; });
+				};
 
 			// call function to 
 			update();
